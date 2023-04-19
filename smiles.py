@@ -16,4 +16,3 @@ if __name__ == '__main__':
     df['name'] = df['name'].astype(str)
     df['SMILES'] = df.iloc[:, 0].apply(CIRconvert)
     df.to_csv('mol_smiles.csv', index=False)
-    
