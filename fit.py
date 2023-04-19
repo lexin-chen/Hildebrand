@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from enum import Enum
 from scipy.optimize import curve_fit
-import models
+import modules.models as models
 from matplotlib import pyplot as plt
 
 class prop_col(Enum):
