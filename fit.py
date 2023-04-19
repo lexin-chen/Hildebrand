@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from enum import Enum
 from scipy.optimize import curve_fit
-
+from models import Models
 class prop_col(Enum):
     """
     Enum class for the column number of the properties
@@ -33,4 +33,9 @@ def read_data(file_name):
 if __name__ == "__main__":
     file_name = "mol_smiles.csv"
     df = pd.read_csv(file_name, delimiter=",", encoding='utf-8')
+    parameters, covariance = curve_fit(Models.model_1, (df['HOMO'], df['LUMO'], df['V_m'], df['chi'], df['eta']), df['HSP_exp'], maxfev = 500000)
+
+    fit_data = Models.model_2((df['HOMO'], df['LUMO'], df['V_m'], df['chi'], df['eta']), *parameters)
+    SE = np.sqrt(np.diag(covariance))
+    print(parameters, SE)
     
