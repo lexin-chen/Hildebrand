@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from enum import Enum
 from scipy.optimize import curve_fit
-import modules.models as models
+import modules.models
 from matplotlib import pyplot as plt
 from rdkit import Chem
 from rdkit.Chem import Draw
@@ -23,24 +23,9 @@ def sep_by_dipole(file_name, df=None):
     low_dipole.to_csv("low_dipoles.csv", index=False)
     high_dipole.to_csv("high_dipoles.csv", index=False)
 
-def structure_annotation(smiles_list, exp_list, fit_data, ax):
-    mol_list = [Chem.MolFromSmiles(smiles) for smiles in smiles_list]
-    
-    for mol, x, y in zip(mol_list, exp_list, fit_data):
-        drawer = rdMolDraw2D.MolDraw2DSVG(250, 250)
-        opts = Draw.DrawingOptions()
-        opts.bondLineWidth = 20
-        drawer.DrawMolecule(mol)
-        drawer.FinishDrawing()
-        svg = drawer.GetDrawingText()
-        image = Draw.MolToImage(mol, size=(250, 250))
-        x_offset = 0.3 + (250/1000) # calculate x offset based on image size
-        ax.imshow(image, extent=[x+x_offset-0.3, x+x_offset+0.3, y-0.3, y+0.3])
-    return ax
-
 def loop_models_plot(df, exp, text, save_dir_path):
     for i in range(1, 12):
-        func = getattr(models, f"model_{i}")
+        func = getattr(modules.models, f"model_{i}")
         parameters, covariance = curve_fit(func, (df['HOMO'], df['LUMO'], df['V_m'], df['chi'], df['eta']), 
                                         exp, maxfev = 500000)
         fit_data = func((df['HOMO'], df['LUMO'], df['V_m'], df['chi'], df['eta']), 
@@ -58,9 +43,31 @@ def loop_models_plot(df, exp, text, save_dir_path):
         ax.title.set_text(f"Model {i}: {text}")
         ax.set_xlabel("Experimental Values")
         ax.set_ylabel("Theoretical Values")
-        figure_name = f"model{i}"
+        figure_name = f"model_{i}"
         fig.savefig(f"{save_dir_path}/{figure_name}", bbox_inches = "tight", dpi = 500, transparent = True)
         print(f"Finished with Model {i}...")
+
+def loop_model_table(df, exp, save_dir_path, dipole, text):
+    aicc_list = []
+    stats_list = []
+    for i in range(1, 12):
+        func = getattr(modules.models, f"model_{i}")
+        model = f"Model {i}"
+        parameters, covariance = curve_fit(func, (df['HOMO'], df['LUMO'], df['V_m'], df['chi'], df['eta']), 
+                                        exp, maxfev = 500000)
+        fit_data = func((df['HOMO'], df['LUMO'], df['V_m'], df['chi'], df['eta']), 
+                        *parameters)
+        SE = np.sqrt(np.diag(covariance))
+        mean_abs_err, rmse, loocv, aicc = get_errors(exp, fit_data, parameters)
+        aicc_list.append(aicc)
+        stats_df = print_stats(model, parameters, SE, mean_abs_err, rmse, loocv, aicc)
+        stats_list.append(stats_df)
+    stats_result = pd.concat(stats_list, axis=1)
+    stats_result = replace_aicc(aicc_list, stats_result)
+    stats_result = stats_result.fillna("-")
+    with open(f"{save_dir_path}/{dipole}.txt", "w", encoding="utf-8") as f:
+                    f.write(f"{text} Models\n")
+                    f.write(tabulate(stats_result, headers="keys", stralign="center", tablefmt='fancy_grid'))
 
 def get_errors(exp, fit_data, parameters):
     """ Calculates the mean absolute error (MAE), root-mean square error (RMSE), Akaike Information Criterion with correction for small samples (AICC),
@@ -148,36 +155,30 @@ def print_stats(model, parameters, SE, mean_abs_err, rmse, loocv, aicc):
     stats_df = pd.DataFrame(stats).set_index(" ")
     return stats_df
 
-def loop_model_table(df, exp, save_dir_path, dipole, text):
-    aicc_list = []
-    stats_list = []
-    for i in range(1, 12):
-        func = getattr(models, f"model_{i}")
-        model = f"Model {i}"
-        parameters, covariance = curve_fit(func, (df['HOMO'], df['LUMO'], df['V_m'], df['chi'], df['eta']), 
-                                        exp, maxfev = 500000)
-        fit_data = func((df['HOMO'], df['LUMO'], df['V_m'], df['chi'], df['eta']), 
-                        *parameters)
-        SE = np.sqrt(np.diag(covariance))
-        mean_abs_err, rmse, loocv, aicc = get_errors(exp, fit_data, parameters)
-        aicc_list.append(aicc)
-        stats_df = print_stats(model, parameters, SE, mean_abs_err, rmse, loocv, aicc)
-        stats_list.append(stats_df)
-    stats_result = pd.concat(stats_list, axis=1)
-    stats_result = replace_aicc(aicc_list, stats_result)
-    stats_result = stats_result.fillna("-")
-    with open(f"{save_dir_path}/{dipole}.txt", "w", encoding="utf-8") as f:
-                    f.write(f"Model {i} - {text}\n")
-                    f.write(tabulate(stats_result, headers="keys", stralign="center", tablefmt='fancy_grid'))
+def structure_annotation(smiles_list, exp_list, fit_data, ax):
+    mol_list = [Chem.MolFromSmiles(smiles) for smiles in smiles_list]
+    
+    for mol, x, y in zip(mol_list, exp_list, fit_data):
+        drawer = rdMolDraw2D.MolDraw2DSVG(250, 250)
+        opts = Draw.DrawingOptions()
+        opts.bondLineWidth = 20
+        drawer.DrawMolecule(mol)
+        drawer.FinishDrawing()
+        svg = drawer.GetDrawingText()
+        image = Draw.MolToImage(mol, size=(250, 250))
+        x_offset = 0.3 + (250/1000) # calculate x offset based on image size
+        ax.imshow(image, extent=[x+x_offset-0.3, x+x_offset+0.3, y-0.3, y+0.3])
+    return ax
         
 if __name__ == "__main__":
-    dipole = "all_dipoles"
-    text = " ".join(word.capitalize() for word in dipole.split("_"))
     save_dir_path = f"tables"
-    if not os.path.exists(save_dir_path):
-        os.makedirs(save_dir_path)
-    df = pd.read_csv(f"{dipole}.csv", delimiter=",", encoding='utf-8')
-    exp = df['HSP_exp']
-    
-    #loop_models_plot(df, exp, text, save_dir_path)
-    #loop_model_table(df, exp)
+    for dipole in ["all_dipoles", "low_dipoles", "high_dipoles"]:
+        save_dir_path = f"plot/{dipole}"
+        if not os.path.exists(save_dir_path):
+            os.makedirs(save_dir_path)
+        text = " ".join(word.capitalize() for word in dipole.split("_"))
+        df = pd.read_csv(f"{dipole}.csv", delimiter=",", encoding='utf-8')
+        exp = df['HSP_exp']
+          
+        #loop_models_plot(df, exp, text, save_dir_path)
+        loop_model_table(df, exp)
