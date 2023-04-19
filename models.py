@@ -7,7 +7,7 @@ class Models:
         self.v_m = v_m
         self.gamma = kwargs.get("gamma", None)
         self.xi = kwargs.get("xi", None)
-
+    
     def model_1(self, p, b):
         return p * np.sqrt(((self.gamma * self.ie + self.ea) ** 2 / ((2 * self.xi * (1 + self.gamma) ** 2) * \
             (self.ie - self.ea)) - 2494.35) / (self.v_m)) + b
@@ -55,4 +55,4 @@ class Models:
         return p * np.sqrt(((self.gamma * self.ie + self.ea) ** 2 / (2 * (1 + self.gamma) ** 2 * \
             (self.ie - self.ea)) * (1 + ((self.gamma * self.ie + self.ea) / (3 * (1 + self.gamma) * \
             (self.ie - self.ea) ** 2) * a)) - 2494.35) / (self.v_m)) + b
-       
+   
