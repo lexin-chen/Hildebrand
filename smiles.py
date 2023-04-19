@@ -7,7 +7,7 @@ def CIRconvert(ids):
         ans = urlopen(url).read().decode('utf8')
         return ans
     except:
-        print(f"{ids} not work")
+        print(f"{ids} did not work")
         return 'Did not work'
 
 if __name__ == '__main__':
