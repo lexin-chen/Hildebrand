@@ -2,7 +2,9 @@ import pandas as pd
 import numpy as np
 from enum import Enum
 from scipy.optimize import curve_fit
-from models import Models
+import models
+from matplotlib import pyplot as plt
+
 class prop_col(Enum):
     """
     Enum class for the column number of the properties
@@ -31,11 +33,15 @@ def read_data(file_name):
                             index_col=0, encoding='utf-8')
 
 if __name__ == "__main__":
-    file_name = "mol_smiles.csv"
+    file_name = "all_molecules.csv"
     df = pd.read_csv(file_name, delimiter=",", encoding='utf-8')
-    parameters, covariance = curve_fit(Models.model_1, (df['HOMO'], df['LUMO'], df['V_m'], df['chi'], df['eta']), df['HSP_exp'], maxfev = 500000)
-
-    fit_data = Models.model_2((df['HOMO'], df['LUMO'], df['V_m'], df['chi'], df['eta']), *parameters)
+    func = getattr(models, "model_7")
+    parameters, covariance = curve_fit(func, (df['HOMO'], df['LUMO'], df['V_m'], df['chi'], df['eta']), df['HSP_exp'], maxfev = 500000)
+    fit_data = func((df['HOMO'], df['LUMO'], df['V_m'], df['chi'], df['eta']), *parameters)
+    print(fit_data)
     SE = np.sqrt(np.diag(covariance))
-    print(parameters, SE)
-    
+    fig, ax = plt.subplots()
+    x = np.linspace(min(df['HSP_exp']), max(df['HSP_exp']))
+    ax.scatter(df['HSP_exp'], fit_data, marker='o')
+    ax.plot(x, x, dashes=[4, 4])
+    plt.show()
