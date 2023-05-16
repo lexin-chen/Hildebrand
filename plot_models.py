@@ -7,7 +7,7 @@ if __name__ == "__main__":
     (all_dipoles, low_dipoles, high_dipoles)
     """
     dipole = "all_dipoles"
-    save_dir_path = f"plot/{dipole}"
+    save_dir_path = f"plots/{dipole}"
     if not os.path.exists(save_dir_path):
         os.makedirs(save_dir_path)
     text = " ".join(word.capitalize() for word in dipole.split("_"))
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     """Plot the models for all types of dipoles
     """
     for dipole in ["all_dipoles", "low_dipoles", "high_dipoles"]:
-        save_dir_path = f"plot/{dipole}"
+        save_dir_path = f"plots/{dipole}"
         if not os.path.exists(save_dir_path):
             os.makedirs(save_dir_path)
         text = " ".join(word.capitalize() for word in dipole.split("_"))
