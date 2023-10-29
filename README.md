@@ -4,4 +4,4 @@ Quantifying Hidebrand solubility parameters. This repo contains charge transfer 
 
 ### Please Cite:
 
-[Hildebrand Solubility Parameters Revisited - Cohesive Energy or Electrophilicity Densities?](https://chemrxiv.org/engage/chemrxiv/article-details/644c189c6ee8e6b5ed4439e7)
+[Miranda-Quintana, Ramon Alain, Chen, Lexin, Smiatek, Jens, ChemPhysChem 2023, e202300566.](https://chemistry-europe.onlinelibrary.wiley.com/doi/10.1002/cphc.202300566)
